@@ -12,7 +12,7 @@
 
 - Documentation still a work in progress.
 
-- To use, clone this repo and:
+- To use, ensure you have a recent version of docker and docker-compose installed, then clone this repo and:
   - cp .env.sample .env
   - edit .env with your details
   - ./install.sh
