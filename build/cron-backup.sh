@@ -1,5 +1,5 @@
 #!/bin/bash
-
+DATE=$(date +%Y%m%d%H%M)
 # Backup database
 mysqldump --defaults-extra-file=/home/cloudlog/mysql.cnf --single-transaction --routines --triggers {$MYSQL_DATABASE} | gzip -9 > /backup/auto/${MYSQL_DATABASE}-db_auto.$DATE.sql.gz
 
