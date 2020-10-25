@@ -35,12 +35,12 @@ docker-compose down
 echo ""
 echo "*** Removing any existing data that might exist (not backups)"
 echo ""
-rm -rf $DIR/data/db
-rm -rf $DIR/data/cloudlog
-rm -rf $DIR/data/certs
-rm -rf $DIR/data/conf.d
-rm -rf $DIR/data/html
-rm -rf $DIR/data/vhost.d
+docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm rm -rf /data/db
+docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm rm -rf /data/cloudlog
+docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm rm -rf /data/certs
+docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm rm -rf /data/conf.d
+docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm rm -rf /data/html
+docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm rm -rf /data/vhost.d
 
 echo ""
 echo "*** Creating directories and cloning cloudlog repo from git"
@@ -61,7 +61,11 @@ if [ -f $DIR/${SAMPLE_CONFIGFILE} ]; then
     cp $DIR/${SAMPLE_CONFIGFILE} $DIR/${CONFIGFILE}
 
     # Update config
-    docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm sed -ri "s|\['base_url'\] = '([^\']*)+'\;|\['base_url'\] = '${BASE_URL:-http://localhost/}'\;|g" ${CONFIGFILE}
+    if [ ${HTTPS_PORT} -eq 443 ]; then
+        docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm sed -ri "s|\['base_url'\] = '([^\']*)+'\;|\['base_url'\] = '${BASE_URL:-http://localhost/}'\;|g" ${CONFIGFILE}
+    else
+        docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm sed -ri "s|\['base_url'\] = '([^\']*)+'\;|\['base_url'\] = '${BASE_URL}:${HTTPS_PORT}'\;|g" ${CONFIGFILE}
+    fi
     docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm sed -ri "s|\['directory'\] = '([^\']*)+'\;|\['directory'\] = '${WEB_DIRECOTRY}'\;|g" ${CONFIGFILE}
 
     docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm sed -ri "s/\['callbook'\] = \"([^\']*)+\"\;/\['callbook'\] = \"${CALLBOOK:-hamqth}\"\;/g" ${CONFIGFILE}
