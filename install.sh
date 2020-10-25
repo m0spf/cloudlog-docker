@@ -1,10 +1,5 @@
 #!/bin/bash
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-if [ "$EUID" -ne 0 ]
-  then echo "Please run as root, eg sudo ./install.sh"
-  exit
-fi
-
 source $DIR/.env
 
 if ! type "git" > /dev/null; then
@@ -52,36 +47,35 @@ echo "*** Creating directories and cloning cloudlog repo from git"
 echo ""
 mkdir -p $DIR/data/cloudlog
 mkdir -p $DIR/data/backup/auto
-chown -R 5001:5001 $DIR/data/backup/auto
 git clone https://github.com/magicbug/Cloudlog.git $DIR/data/cloudlog/
 
 echo ""
 echo "*** Creating config.php and database.php configs"
 echo ""
-CONFIGFILE=$DIR/data/cloudlog/application/config/config.php
-SAMPLE_CONFIGFILE=$DIR/data/cloudlog/application/config/config.sample.php
-DBCONFIGFILE=$DIR/data/cloudlog/application/config/database.php
-SAMPLE_DBCONFIGFILE=$DIR/data/cloudlog/application/config/database.sample.php
-if [ -f ${SAMPLE_CONFIGFILE} ]; then
+CONFIGFILE=/data/cloudlog/application/config/config.php
+SAMPLE_CONFIGFILE=/data/cloudlog/application/config/config.sample.php
+DBCONFIGFILE=/data/cloudlog/application/config/database.php
+SAMPLE_DBCONFIGFILE=/data/cloudlog/application/config/database.sample.php
+if [ -f $DIR/${SAMPLE_CONFIGFILE} ]; then
     # Copy template
-    cp ${SAMPLE_CONFIGFILE} ${CONFIGFILE}
+    cp $DIR/${SAMPLE_CONFIGFILE} $DIR/${CONFIGFILE}
 
     # Update config
-    sed -ri "s|\['base_url'\] = '([^\']*)+'\;|\['base_url'\] = '${BASE_URL:-http://localhost/}'\;|g" ${CONFIGFILE}
-    sed -ri "s|\['directory'\] = '([^\']*)+'\;|\['directory'\] = '${WEB_DIRECOTRY}'\;|g" ${CONFIGFILE}
+    docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm sed -ri "s|\['base_url'\] = '([^\']*)+'\;|\['base_url'\] = '${BASE_URL:-http://localhost/}'\;|g" ${CONFIGFILE}
+    docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm sed -ri "s|\['directory'\] = '([^\']*)+'\;|\['directory'\] = '${WEB_DIRECOTRY}'\;|g" ${CONFIGFILE}
 
-    sed -ri "s/\['callbook'\] = \"([^\']*)+\"\;/\['callbook'\] = \"${CALLBOOK:-hamqth}\"\;/g" ${CONFIGFILE}
-    sed -ri "s/\['hamqth_username'\] = \"([^\']*)+\"\;/\['hamqth_username'\] = \"${HAMQTH_USERNAME//\//\\/}\"\;/g" ${CONFIGFILE}
-    sed -ri "s/\['hamqth_password'\] = \"([^\']*)+\"\;/\['hamqth_password'\] = \"${HAMQTH_PASWORD//\//\\/}\"\;/g" ${CONFIGFILE}
-    sed -ri "s/\['qrz_username'\] = \"([^\']*)+\"\;/\['qrz_username'\] = \"${QRZ_USERNAME//\//\\/}\"\;/g" ${CONFIGFILE}
-    sed -ri "s/\['qrz_password'\] = \"([^\']*)+\"\;/\['qrz_password'\] = \"${QRZ_PASSWORD//\//\\/}\"\;/g" ${CONFIGFILE}
-    sed -ri "s/\['locator'\] = \"([^\']*)+\"\;/\['locator'\] = \"${LOCATOR//\//\\/}\"\;/g" ${CONFIGFILE}
-    sed -ri "s/\['display_freq'\] = ([^\']*)+\;/\['display_freq'\] = ${DISPLAY_FREQ//\//\\/}\;/g" ${CONFIGFILE}
-    sed -ri "s|\['sess_driver'\] = '([^\']*)+'\;|\['sess_driver'\] = '${SESSION_DRIVER:-files}'\;|g" ${CONFIGFILE}
-    sed -ri "s|\['sess_save_path'\] = '([^\']*)+'\;|\['sess_save_path'\] = '${SESSION_SAVE_PATH:-/tmp}'\;|g" ${CONFIGFILE}
-    sed -ri "s|\['sess_expiration'\] = '([^\']*)+'\;|\['sess_expiration'\] = '${SESSION_EXPIRATION:-0}'\;|g" ${CONFIGFILE}
-    sed -ri "s|\['index_page'\] = 'index.php'\;|\['index_page'\] = ''\;|g" ${CONFIGFILE}
-    sed -ri "s|\['proxy_ips'\] = '([^\']*)+'\;|\['proxy_ips'\] = '${PROXY_IPS:-10.0.0.0/8}'\;|g" ${CONFIGFILE}
+    docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm sed -ri "s/\['callbook'\] = \"([^\']*)+\"\;/\['callbook'\] = \"${CALLBOOK:-hamqth}\"\;/g" ${CONFIGFILE}
+    docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm sed -ri "s/\['hamqth_username'\] = \"([^\']*)+\"\;/\['hamqth_username'\] = \"${HAMQTH_USERNAME//\//\\/}\"\;/g" ${CONFIGFILE}
+    docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm sed -ri "s/\['hamqth_password'\] = \"([^\']*)+\"\;/\['hamqth_password'\] = \"${HAMQTH_PASWORD//\//\\/}\"\;/g" ${CONFIGFILE}
+    docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm sed -ri "s/\['qrz_username'\] = \"([^\']*)+\"\;/\['qrz_username'\] = \"${QRZ_USERNAME//\//\\/}\"\;/g" ${CONFIGFILE}
+    docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm sed -ri "s/\['qrz_password'\] = \"([^\']*)+\"\;/\['qrz_password'\] = \"${QRZ_PASSWORD//\//\\/}\"\;/g" ${CONFIGFILE}
+    docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm sed -ri "s/\['locator'\] = \"([^\']*)+\"\;/\['locator'\] = \"${LOCATOR//\//\\/}\"\;/g" ${CONFIGFILE}
+    docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm sed -ri "s/\['display_freq'\] = ([^\']*)+\;/\['display_freq'\] = ${DISPLAY_FREQ//\//\\/}\;/g" ${CONFIGFILE}
+    docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm sed -ri "s|\['sess_driver'\] = '([^\']*)+'\;|\['sess_driver'\] = '${SESSION_DRIVER:-files}'\;|g" ${CONFIGFILE}
+    docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm sed -ri "s|\['sess_save_path'\] = '([^\']*)+'\;|\['sess_save_path'\] = '${SESSION_SAVE_PATH:-/tmp}'\;|g" ${CONFIGFILE}
+    docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm sed -ri "s|\['sess_expiration'\] = '([^\']*)+'\;|\['sess_expiration'\] = '${SESSION_EXPIRATION:-0}'\;|g" ${CONFIGFILE}
+    docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm sed -ri "s|\['index_page'\] = 'index.php'\;|\['index_page'\] = ''\;|g" ${CONFIGFILE}
+    docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm sed -ri "s|\['proxy_ips'\] = '([^\']*)+'\;|\['proxy_ips'\] = '${PROXY_IPS:-10.0.0.0/8}'\;|g" ${CONFIGFILE}
     echo ""
     echo "*** config.php file has been created."
     echo ""
@@ -91,16 +85,16 @@ else
     echo ""
     exit 1
 fi
-if [ -f ${SAMPLE_DBCONFIGFILE} ]; then
+if [ -f $DIR/${SAMPLE_DBCONFIGFILE} ]; then
 
     # Copy template
-    cp ${SAMPLE_DBCONFIGFILE} ${DBCONFIGFILE}
+    cp $DIR/${SAMPLE_DBCONFIGFILE} $DIR/${DBCONFIGFILE}
 
     # Update config for custom mysql
-    sed -ri "s/'hostname' => '([^\']*)+',/'hostname' => 'db',/g" ${DBCONFIGFILE}
-    sed -ri "s/'username' => '([^\']*)+',/'username' => '${MYSQL_USER}',/g" ${DBCONFIGFILE}
-    sed -ri "s/'password' => '([^\']*)+',/'password' => '${MYSQL_PASSWORD//\//\\/}',/g" ${DBCONFIGFILE}
-    sed -ri "s/'database' => '([^\']*)+',/'database' => '${MYSQL_DATABASE}',/g" ${DBCONFIGFILE}
+    docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm sed -ri "s/'hostname' => '([^\']*)+',/'hostname' => 'db',/g" ${DBCONFIGFILE}
+    docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm sed -ri "s/'username' => '([^\']*)+',/'username' => '${MYSQL_USER}',/g" ${DBCONFIGFILE}
+    docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm sed -ri "s/'password' => '([^\']*)+',/'password' => '${MYSQL_PASSWORD//\//\\/}',/g" ${DBCONFIGFILE}
+    docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm sed -ri "s/'database' => '([^\']*)+',/'database' => '${MYSQL_DATABASE}',/g" ${DBCONFIGFILE}
     echo ""
     echo "*** database.php config file has been created."
     echo ""
@@ -123,7 +117,7 @@ echo "@daily cloudlog curl --silent http://${APP_NAME}_web:8080/index.php/update
 echo "@daily cloudlog curl --silent http://${APP_NAME}_web:8080/index.php/update/dxcc &>/dev/null" >> $DIR/data/cron.d/cloudlog
 
 # Generate random offset for the crons so that the servers dont get hit on the hour/minute
-OFFSET=$(docker run -it --name sed --rm -it alpine:3 shuf -i5-55 -n1)
+OFFSET=$(docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm shuf -i5-55 -n1)
 OFFSET_TRIMMED=$(echo $OFFSET | tr -dc '0-9')
 if [ "${CLUBLOG_UPLOAD_CRON}" == true ]; then
     echo "$OFFSET_TRIMMED * * * * cloudlog sleep $OFFSET_TRIMMED; curl --silent http://${APP_NAME}_web:8080/index.php/clublog/upload/${CALLSIGN} &>/dev/null" >> $DIR/data/cron.d/cloudlog
@@ -162,10 +156,8 @@ echo ""
 echo "*** Creating cloudlog user"
 echo ""
 
-#HASHED_PW==$(docker run -it --name password_hash --rm php:7-apache php -r 'echo password_hash('"${CLOUDLOG_PASSWORD}"', PASSWORD_DEFAULT);');
-#HASHED_PW==$(docker run -it --name password_hash --mount type=bind,source=/root/docker/log/data/initdb.d/,target=/data --rm php:7-apache 
-HASHED_PW=$(docker run -it --name password_hash --rm php:7-apache php -r 'echo password_hash("'"${CLOUDLOG_PASSWORD}"'", PASSWORD_DEFAULT);')
-docker run -it --name sed --mount type=bind,source=/root/docker/log/data/initdb.d/,target=/data --rm php:7-apache sed -i "/m0abc/c INSERT INTO \`users\` VALUES ('4','${CLOUDLOG_USERNAME}','${HASHED_PW}','${EMAIL}','99','${CALLSIGN}','${LOCATOR}','${FIRST_NAME}','${LAST_NAME}','151',null,null,null,null,null);" /data/install.sql
+HASHED_PW=$(docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm php -r 'echo password_hash("'"${CLOUDLOG_PASSWORD}"'", PASSWORD_DEFAULT);')
+docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm sed -i "/m0abc/c INSERT INTO \`users\` VALUES ('4','${CLOUDLOG_USERNAME}','${HASHED_PW}','${EMAIL}','99','${CALLSIGN}','${LOCATOR}','${FIRST_NAME}','${LAST_NAME}','151',null,null,null,null,null);" /data/initdb.d/install.sql
 
 echo ""
 echo "*** Removing Cloudlog install dir"
@@ -175,14 +167,15 @@ rm -rf $DIR/data/cloudlog/install/
 echo ""
 echo "*** Setting permissions"
 echo ""
-chown -R 5001:5001 $DIR/data/cloudlog
-chmod -R 755 $DIR/data/cloudlog
+docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm chown -R 5001:5001 /data/cloudlog
+docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm chmod -R 755 /data/cloudlog
+docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm chown -R 5001:5001 $DIR/data/backup/auto
 
 echo ""
 echo "*** Pulling images and building containers"
 echo ""
 docker-compose pull
-docker-compose build --no-cache
+docker-compose build
 
 echo ""
 echo "*** Install complete, if you are wanting to restore from a sql database backup then place the backup .sql or sql.gz file in ./data/initdb.d and remove install.sql before you run start.sh"

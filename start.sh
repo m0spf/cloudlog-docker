@@ -1,11 +1,9 @@
 #!/bin/bash
-if [ "$EUID" -ne 0 ]
-  then echo "Please run as root, eg sudo ./install.sh"
-  exit
-fi
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-chown -R 5001:5001 $DIR/data/cloudlog
-chmod -R 755 $DIR/data/cloudlog
+echo ""
+echo "*** Setting permissions, might take a few seconds"
+docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm chown -R 5001:5001 /data/cloudlog
+docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm chmod -R 755 /data/cloudlog
 docker-compose up -d
 echo ""
 echo "*** To stop run ./stop.sh"
