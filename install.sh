@@ -1,5 +1,9 @@
 #!/bin/bash
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+if [ ! -f $DIR/.env ]; then
+    echo "*** ERROR .env file is missing, copy .env.sample to .env and edit"
+    exit 1
+fi
 source $DIR/.env
 
 if ! type "git" > /dev/null; then
@@ -20,7 +24,7 @@ case "$response" in
         ;;
 esac
 
-if [ -f $DIR/data ]; then
+if [ -d $DIR/data ]; then
   echo ""
   echo "*** data directory exists, taking backup just in case..."
   echo ""
