@@ -29,22 +29,21 @@ if [ -d $DIR/data ]; then
   echo "*** data directory exists, taking backup just in case..."
   echo ""
   $DIR/backup.sh
+  echo ""
+  echo "*** Removing any existing data that might exist (not backups)"
+  echo ""
+  docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm rm -rf /data/db
+  docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm rm -rf /data/cloudlog
+  docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm rm -rf /data/certs
+  docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm rm -rf /data/conf.d
+  docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm rm -rf /data/html
+  docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm rm -rf /data/vhost.d
 fi
 
 echo ""
 echo "*** Removing docker containers in case they are still running"
 echo ""
 docker-compose down
-
-echo ""
-echo "*** Removing any existing data that might exist (not backups)"
-echo ""
-docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm rm -rf /data/db
-docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm rm -rf /data/cloudlog
-docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm rm -rf /data/certs
-docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm rm -rf /data/conf.d
-docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm rm -rf /data/html
-docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm rm -rf /data/vhost.d
 
 echo ""
 echo "*** Creating directories and cloning cloudlog repo from git"
