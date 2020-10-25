@@ -1,0 +1,19 @@
+FROM centos:8
+
+RUN dnf -y update
+RUN dnf -y install cronie curl mysql
+
+COPY cron-backup.sh /usr/bin/cron-backup.sh
+
+RUN groupadd -g 5001 cloudlog \
+&& useradd -d /home/cloudlog -s /bin/bash -u 5001 -g 5001 cloudlog \
+&& chown cloudlog:cloudlog /usr/bin/cron-backup.sh \
+&& chmod 755 /usr/bin/cron-backup.sh
+
+RUN echo "[client]" > /home/cloudlog/mysql.cnf \
+&& echo "user = root" >> /home/cloudlog/mysql.cnf \
+&& echo "password = $MYSQL_ROOT_PASSWORD" >> /home/cloudlog/mysql.cnf \
+&& echo "host = ${MYSQL_HOST}" >> /home/cloudlog/mysql.cnf \
+&& chmod 600 /home/cloudlog/mysql.cnf
+
+CMD crond -n

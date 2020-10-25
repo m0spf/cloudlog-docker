@@ -1,0 +1,111 @@
+version: '2.4'
+services:
+  fpm:
+    build:
+      context: ./build
+      dockerfile: Dockerfile-fpm
+    container_name: ${APP_NAME}_fpm
+    hostname: ${APP_NAME}_fpm
+    restart: always
+    depends_on: 
+      - db
+    volumes:
+      - ./data/cloudlog:/var/www/
+
+  web:
+    build:
+      context: ./build
+      dockerfile: Dockerfile-web
+    container_name: ${APP_NAME}_web
+    hostname: ${APP_NAME}_web
+    restart: unless-stopped
+    expose:
+      - 8080/tcp
+    depends_on:
+      - fpm
+    environment:
+      - VIRTUAL_HOST=${APP_HOSTNAME}
+      - VIRTUAL_PORT=8080
+      - HSTS=off
+      - LETSENCRYPT_HOST=${APP_HOSTNAME}
+      - LETSENCRYPT_TEST=${TEST}
+    volumes:
+      - ./data/cloudlog:/var/www
+  
+  db:
+    container_name: ${APP_NAME}_db
+    hostname: ${APP_NAME}_db
+    image: mysql:5.7
+    restart: always
+    environment:
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - ./data/db:/var/lib/mysql
+      - ./data/backup:/backup
+      - ./data/initdb.d:/docker-entrypoint-initdb.d
+        
+#  redis:
+#    image: redis:5.0-alpine
+#    healthcheck:
+#      test: ["CMD", "redis-cli", "ping"]
+#    volumes:
+#      - ./data/redis:/data
+
+  proxy:
+    container_name: ${APP_NAME}_proxy
+    hostname: ${APP_NAME}_proxy
+    image: jwilder/nginx-proxy
+    restart: always
+    ports:
+      # Bind to specific IP
+      #- 10.1.1.1:80:80
+      #- 10.1.1.1:443:443
+      # Bind to any IP on host
+       - 80:80
+       - 443:443
+    volumes:
+      - ./data/conf.d:/etc/nginx/conf.d
+      - ./data/vhost.d:/etc/nginx/vhost.d
+      - ./data/html:/usr/share/nginx/html
+      - ./data/certs:/etc/nginx/certs
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    environment:
+      - DEFAULT_HOST=${APP_HOSTNAME}
+
+  cron:
+    container_name: ${APP_NAME}_cron
+    hostname: ${APP_NAME}_cron
+    build:
+      context: ./build
+      dockerfile: Dockerfile-cron
+    restart: always
+    environment:
+      - MYSQL_HOST=${APP_NAME}_db
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - ./data/cron.d:/etc/cron.d
+      - ./data/backup:/backup
+      - ./data/cloudlog:/cloudlog
+
+  letsencrypt:
+    container_name: ${APP_NAME}_le
+    hostname: ${APP_NAME}_le
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    volumes_from:
+      - proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - DEFAULT_EMAIL=${EMAIL}
+    restart: always
+
+#networks:
+#  default:
+#    driver_opts:
+#      com.docker.network.bridge.name: dock-${APP_NAME}
