@@ -75,6 +75,10 @@ if [ -f $DIR/${SAMPLE_CONFIGFILE} ]; then
 
     if [ ${LANGUAGE} != "english" ] && [ -d "$LANGUAGE_DIR" ]; then
         docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm sed -ri "s/\['language'\][[:space:]]=.*\;/\['language'\] = '${LANGUAGE}'\;/g" ${CONFIGFILE}
+    else
+      echo ""
+      echo "*** WARNING - Default language not changed: looks like '${LANGUAGE}' is not an available language."
+      echo ""
     fi
 
     docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm sed -ri "s/\['callbook'\] = \"([^\']*)+\"\;/\['callbook'\] = \"${CALLBOOK:-hamqth}\"\;/g" ${CONFIGFILE}
