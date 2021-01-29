@@ -59,6 +59,8 @@ CONFIGFILE=/data/cloudlog/application/config/config.php
 SAMPLE_CONFIGFILE=/data/cloudlog/application/config/config.sample.php
 DBCONFIGFILE=/data/cloudlog/application/config/database.php
 SAMPLE_DBCONFIGFILE=/data/cloudlog/application/config/database.sample.php
+LANGUAGE_DIR="$DIR/data/cloudlog/application/language/$LANGUAGE"
+
 if [ -f $DIR/${SAMPLE_CONFIGFILE} ]; then
     # Copy template
     cp $DIR/${SAMPLE_CONFIGFILE} $DIR/${CONFIGFILE}
@@ -70,6 +72,14 @@ if [ -f $DIR/${SAMPLE_CONFIGFILE} ]; then
         docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm sed -ri "s|\['base_url'\] = '([^\']*)+'\;|\['base_url'\] = '${BASE_URL}:${HTTPS_PORT}'\;|g" ${CONFIGFILE}
     fi
     docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm sed -ri "s|\['directory'\] = '([^\']*)+'\;|\['directory'\] = '${WEB_DIRECOTRY}'\;|g" ${CONFIGFILE}
+
+    if [ ${LANGUAGE} != "english" ] && [ -d "$LANGUAGE_DIR" ]; then
+        docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm sed -ri "s/\['language'\][[:space:]]=.*\;/\['language'\] = '${LANGUAGE}'\;/g" ${CONFIGFILE}
+    else
+      echo ""
+      echo "*** WARNING - Default language not changed: looks like '${LANGUAGE}' is not an available language."
+      echo ""
+    fi
 
     docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm sed -ri "s/\['callbook'\] = \"([^\']*)+\"\;/\['callbook'\] = \"${CALLBOOK:-hamqth}\"\;/g" ${CONFIGFILE}
     docker run -it --name install_worker --mount type=bind,source=$DIR/data/,target=/data --rm php:7-fpm sed -ri "s/\['hamqth_username'\] = \"([^\']*)+\"\;/\['hamqth_username'\] = \"${HAMQTH_USERNAME//\//\\/}\"\;/g" ${CONFIGFILE}
